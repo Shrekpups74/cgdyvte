@@ -1,0 +1,51 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+
+local TARGET_GAME_ID = 7239319209
+local PLAYER_LIMIT = 39
+
+local function onCharacterAdded(character)
+	local greenLight = Workspace:FindFirstChild("Green Light", true) -- Search recursively
+	if greenLight then
+		local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+		-- Use SetPrimaryPartCFrame to ensure teleportation even if inside another part
+		humanoidRootPart.CFrame = greenLight.CFrame
+		
+		-- Create and trigger a proximity prompt
+		local proximityPrompt = Instance.new("ProximityPrompt")
+		proximityPrompt.ActionText = "Interact"
+		proximityPrompt.ObjectText = "Green Light"
+		proximityPrompt.Parent = greenLight
+		proximityPrompt.RequiresLineOfSight = false -- Ensure it doesn't require line of sight
+		proximityPrompt.MaxActivationDistance = 10 -- Set a reasonable activation distance
+		
+		-- Listen for the proximity prompt being triggered
+		proximityPrompt.Triggered:Connect(function()
+			print("succeed")
+		end)
+		
+		-- Manually trigger the proximity prompt
+		proximityPrompt:InputHoldBegin()
+		proximityPrompt:InputHoldEnd()
+	else
+		warn("Could not find Green Light mesh, attempting server hop")
+		local currentPlayers = #Players:GetPlayers()
+		if currentPlayers < PLAYER_LIMIT then
+			TeleportService:Teleport(TARGET_GAME_ID)
+		else
+			warn("Player limit reached, cannot server hop")
+		end
+	end
+end
+
+local function onPlayerAdded(player)
+	player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+for _, player in Players:GetPlayers() do
+	onPlayerAdded(player)
+end
+
